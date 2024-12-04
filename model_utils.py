@@ -1,5 +1,9 @@
 import torch
+from tqdm import tqdm
+from torch import optim
 from torchvision import models
+
+from image_utils import tensor_to_image
 
 
 def load_models(device: torch.device) -> dict:
@@ -99,7 +103,9 @@ def calculate_content_loss(
     content_features_layer = content_features[layer].detach()
 
     # Compute the mean squared error (MSE) between the target and content features
-    content_loss = torch.mean((target_features[layer] - content_features_layer) ** 2)
+    content_loss = 0.5 * torch.mean(
+        (target_features[layer] - content_features_layer) ** 2
+    )
 
     return content_loss  # Return the computed content loss
 
@@ -142,3 +148,194 @@ def calculate_style_loss(
         style_loss += layer_style_loss
 
     return style_loss
+
+
+def style_transfer_from_content(
+    model_name: str,
+    model_dict: dict,
+    content: torch.Tensor,
+    style: torch.Tensor,
+    data: dict,
+    device: torch.device,
+):
+    """
+    Performs style transfer starting from the content image.
+
+    Parameters:
+        model_name (str): Name of the model to use (e.g., 'vgg-16').
+        model_dict (dict): Dictionary containing pre-trained models.
+        content (torch.Tensor): Content image tensor of shape (1, 3, H, W).
+        style (torch.Tensor): Style image tensor of shape (1, 3, H, W).
+        data (dict): Dictionary containing layers, weights, and hyperparameters.
+        device (torch.device): Device to perform computation on (CPU or GPU).
+
+    Returns:
+        tuple: A list of images at checkpoints and a list of total losses.
+    """
+    # Extract configuration from the `data` dictionary
+    layers = data["layers"]
+    style_weights = data["style_weights"]
+    content_loss_layer = data["content_layer"]
+    params = data["hyperparameters"]
+
+    # Define hyperparameters
+    alpha = params["alpha"]
+    beta = params["beta"]
+    lr = params["lr"]
+    iterations = params["iters"]
+    checkpoints = params["ckpts"]
+
+    # Extract features for the content and style images
+    content_features = extract_features(
+        content, model_dict[model_name], layers[model_name]
+    )
+    style_features = extract_features(style, model_dict[model_name], layers[model_name])
+    model = model_dict[model_name]
+
+    # Initialize the target image as a copy of the content image
+    target = content.clone().requires_grad_(True).to(device)
+
+    # Define the optimizer (Adam is used for efficient optimization)
+    optimizer = optim.Adam([target], lr=lr)
+
+    # Lists to store images at checkpoints and total loss values
+    images = [tensor_to_image(target.detach())]
+    total_losses = []
+
+    # Optimization loop
+    for step in tqdm(range(1, iterations + 1)):
+        # Extract features from the current target image
+        target_features = extract_features(target, model, layers[model_name])
+
+        # Calculate content loss
+        content_loss = calculate_content_loss(
+            target_features, content_features, content_loss_layer
+        )
+
+        # Calculate style loss
+        style_loss = calculate_style_loss(
+            target_features, style_features, style_weights
+        )
+
+        # Compute total loss as weighted sum of content and style losses
+        total_loss = alpha * content_loss + beta * style_loss
+
+        # Update the target image
+        optimizer.zero_grad()
+        total_loss.backward()
+        optimizer.step()
+
+        # Store total loss for tracking
+        total_losses.append(total_loss.item())
+
+        # Save the target image at specified checkpoints
+        if step % (iterations // checkpoints) == 0:
+            images.append(tensor_to_image(target.detach()))
+
+    # Log final step information
+    print(
+        f"Step {step}/{iterations} - Total loss: {total_losses[-1]:.16f}, "
+        f"Content loss: {alpha * content_loss.item():.16f}, Style loss: {beta * style_loss.item():.16f}"
+    )
+
+    # Save the final target image
+    images.append(tensor_to_image(target.detach()))
+
+    return images, total_losses
+
+
+def style_transfer_from_noise(
+    model_name: str,
+    model_dict: dict,
+    content: torch.Tensor,
+    style: torch.Tensor,
+    data: dict,
+    device: torch.device,
+) -> tuple:
+    """
+    Performs style transfer starting from a noise image.
+
+    Parameters:
+        model_name (str): Name of the model to use (e.g., 'vgg-16').
+        model_dict (dict): Dictionary containing pre-trained models.
+        content (torch.Tensor): Content image tensor of shape (1, 3, H, W).
+        style (torch.Tensor): Style image tensor of shape (1, 3, H, W).
+        data (dict): Dictionary containing layers, weights, and hyperparameters.
+        device (torch.device): Device to perform computation on (CPU or GPU).
+
+    Returns:
+        tuple: A list of images at checkpoints and a list of total losses.
+    """
+    # Extract configuration from the `data` dictionary
+    layers = data["layers"]
+    style_weights = data["style_weights"]
+    content_loss_layer = data["content_layer"]
+    params = data["hyperparameters"]
+
+    # Define hyperparameters
+    alpha = params["alpha"]
+    beta = params["beta"]
+    lr = params["lr"]
+    iterations = params["iters"]
+    checkpoints = params["ckpts"]
+
+    # Extract features for the content and style images
+    content_features = extract_features(
+        content, model_dict[model_name], layers[model_name]
+    )
+    style_features = extract_features(style, model_dict[model_name], layers[model_name])
+    model = model_dict[model_name]
+
+    # Initialize the target image as random noise, matching the content image size
+    target = torch.randn_like(content).requires_grad_(True).to(device)
+
+    # Define the optimizer
+    optimizer = optim.LBFGS([target], lr=lr)
+
+    # Lists to store images at checkpoints and total loss values
+    images = [tensor_to_image(target.detach())]  # Initial random noise image
+    total_losses = []
+
+    # Define the optimization closure
+    def closure():
+        optimizer.zero_grad()
+
+        # Extract features from the current target image
+        target_features = extract_features(target, model, layers[model_name])
+
+        # Calculate content loss
+        content_loss = calculate_content_loss(
+            target_features, content_features, content_loss_layer
+        )
+
+        # Calculate style loss
+        style_loss = calculate_style_loss(
+            target_features, style_features, style_weights
+        )
+
+        # Compute total loss as weighted sum of content and style losses
+        total_loss = alpha * content_loss + beta * style_loss
+
+        # Backpropagate total loss
+        total_loss.backward()
+
+        # Store total loss for tracking
+        total_losses.append(total_loss.item())
+
+        return total_loss
+
+    # Optimization loop
+    for step in tqdm(range(1, iterations + 1)):
+        optimizer.step(closure)
+
+        # Save the target image at specified checkpoints
+        if step % (iterations // checkpoints) == 0:
+            images.append(tensor_to_image(target.detach()))
+
+    # Log final step information
+    print(f"Step {step}/{iterations} - Total loss: {total_losses[-1]:.16f}")
+
+    # Save the final target image
+    images.append(tensor_to_image(target.detach()))
+
+    return images, total_losses

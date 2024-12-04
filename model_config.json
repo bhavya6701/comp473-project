@@ -18,18 +18,18 @@
         }
     },
     "style_weights": {
-        "conv1_1": 0.2,
-        "conv2_1": 0.2,
-        "conv3_1": 0.2,
-        "conv4_1": 0.2,
-        "conv5_1": 0.2
+        "conv1_1": 1,
+        "conv2_1": 0.8,
+        "conv3_1": 0.5,
+        "conv4_1": 0.3,
+        "conv5_1": 0.1
     },
     "content_layer": "conv4_2",
     "hyperparameters": {
-        "iters": 500,
-        "ckpts": 10,
         "alpha": 1,
-        "beta": 1e6,
-        "lr": 0.1
+        "beta": 1e7,
+        "ckpts": 10,
+        "lr": 0.1,
+        "iters": 100
     }
 }

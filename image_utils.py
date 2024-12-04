@@ -163,4 +163,5 @@ def plot_images(
             axes[i].axis("off")
 
     plt.tight_layout()
+    plt.subplots_adjust(wspace=1)
     plt.show()
