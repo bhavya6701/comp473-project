@@ -68,15 +68,15 @@ def gram_matrix(tensor: torch.Tensor) -> torch.Tensor:
         torch.Tensor: The Gram matrix of shape (depth, depth), representing the pairwise correlations between feature map channels.
     """
     # Get the dimensions of the tensor: batch size, depth (channels), height, and width
-    _, d, h, w = tensor.size()
+    b, d, h, w = tensor.size()
 
     # Reshape the tensor to combine the spatial dimensions (height and width)
-    # Resulting shape: (depth, height * width)
-    tensor = tensor.view(d, h * w)
+    # Resulting shape: (batch_size, depth, height * width)
+    tensor = tensor.view(b, d, h * w)
 
-    # Compute the Gram matrix as the dot product of the reshaped tensor with its transpose
-    # Shape of gram: (depth, depth)
-    gram = torch.mm(tensor, tensor.t())
+    # Compute the Gram matrix as the dot product of the tensor with its transpose
+    # Shape of gram: (batch_size, depth, depth)
+    gram = torch.bmm(tensor, tensor.transpose(1, 2)) / (d * h * w)
 
     return gram
 
@@ -139,6 +139,6 @@ def calculate_style_loss(
         layer_style_loss = weight * torch.mean((target_gram - style_gram) ** 2)
 
         # Normalize the loss by the total number of elements in the feature map
-        style_loss += layer_style_loss / (d * h * w)
+        style_loss += layer_style_loss
 
     return style_loss
