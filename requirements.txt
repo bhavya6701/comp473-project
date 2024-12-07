@@ -1,4 +1,4 @@
-Pillow
+pillow
 matplotlib
 numpy
 torch
