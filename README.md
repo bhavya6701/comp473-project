@@ -12,10 +12,10 @@ This project implements a sophisticated **Neural Style Transfer** system that le
 
 ## Key Features
 
-- **Advanced Feature Extraction**: Utilizes pre-trained VGG-16 and VGG-19 networks
+- **Advanced Feature Extraction**: Utilizes pre-trained **VGG-16**, **VGG-19** and **ResNet-18** networks
 - **Flexible Style Transfer**: Supports multiple optimization techniques
 - **Comprehensive Analysis**: Includes comparisons of:
-  - Different CNN architectures (VGG-16 vs VGG-19)
+  - Different CNN architectures
   - Content extraction layers
   - Style-to-content weight ratios
   - Optimization algorithms (Adam vs L-BFGS)
@@ -48,10 +48,27 @@ This project implements a sophisticated **Neural Style Transfer** system that le
 
 ## Installation and Setup
 
-1. Clone the repository and install dependencies
-2. Prepare content and style images
-3. Configure parameters in `model_config.json`
-4. Run the Jupyter notebook to perform style transfer
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/bhavya6701/comp473-project.git
+   ```
+
+2. Install the required dependencies (preferably in a virtual environment like `conda` or `venv`):
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Prepare the content and style images in the `images` directory
+
+4. Configure the model parameters in `model_config.json`
+
+5. Open the Jupyter notebook with IDE or terminal:
+
+   ```bash
+   jupyter notebook
+   ```
 
 ## Visualization
 
@@ -63,7 +80,7 @@ The notebook provides comprehensive visualizations:
 
 ## Performance Insights
 
-- **VGG-19** captures more intricate details compared to VGG-16
+- **VGG-19** captures more intricate details compared to **VGG-16** and **ResNet-18** provides poor results for style transfer
 - Deeper content layers preserve more structural information
 - Lower α/β ratios emphasize artistic style
 - Higher α/β ratios maintain content structure

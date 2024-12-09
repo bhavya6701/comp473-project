@@ -78,7 +78,7 @@ def tensor_to_image(tensor: torch.Tensor) -> np.ndarray:
     return image
 
 
-def plot_style_transfer(images: list, total_losses: list, steps: int, checkpoints: int):
+def plot_style_transfer(images: list, total_losses: list, steps: int):
     """
     Plots a series of images along with a graph of total loss versus iteration.
 
@@ -86,16 +86,15 @@ def plot_style_transfer(images: list, total_losses: list, steps: int, checkpoint
         images (list): List of image arrays to be plotted. Typically represents intermediate and final outputs of a model.
         total_losses (list): List of total loss values, where each entry corresponds to a specific iteration.
         steps (int): Total number of iterations used in the process.
-        checkpoints (int): Number of checkpoints (intermediate stages) at which images were saved.
     """
     # Create a plot with 2 rows and 6 columns
-    fig, axes = plt.subplots(3, 4, figsize=(18, 10))
+    fig, axes = plt.subplots(4, 3, figsize=(20, 15))
 
     # Flatten axes for easy iteration
     axes = axes.flatten()
     for i, image in enumerate(images):
         title = (
-            f"Iteration {i * (steps // checkpoints):,}"
+            f"Iteration {i * (steps // 10):,}"
             if i > 0 and i < len(images) - 1
             else "Initial Image (Noise)"
             if i == 0

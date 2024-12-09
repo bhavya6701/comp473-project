@@ -15,21 +15,37 @@
             "19": "conv4_1",
             "21": "conv4_2",
             "28": "conv5_1"
+        },
+        "resnet-18": {
+            "4": "layer1", 
+            "5": "layer2", 
+            "6": "layer3", 
+            "7": "layer4"
         }
     },
     "style_weights": {
-        "conv1_1": 1,
-        "conv2_1": 0.8,
-        "conv3_1": 0.5,
-        "conv4_1": 0.3,
-        "conv5_1": 0.1
+        "vgg": {
+            "conv1_1": 1,
+            "conv2_1": 0.8,
+            "conv3_1": 0.5,
+            "conv4_1": 0.3,
+            "conv5_1": 0.2
+        },
+        "resnet": {
+            "layer1": 0.8,
+            "layer2": 0.5,
+            "layer3": 0.3,
+            "layer4": 0.2
+        }
     },
-    "content_layer": "conv4_2",
+    "content_layer": {
+        "vgg": "conv4_2",
+        "resnet": "layer3"
+    },
     "hyperparameters": {
         "alpha": 1,
-        "beta": 1e7,
-        "ckpts": 10,
+        "beta": 1e6,
         "lr": 0.1,
-        "iters": 100
+        "iters": 250
     }
 }

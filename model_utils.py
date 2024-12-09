@@ -23,6 +23,12 @@ def load_models(device: torch.device) -> dict:
         "vgg-19": models.vgg19(weights=models.VGG19_Weights.DEFAULT).features,
     }
 
+    # Load pre-trained ResNet-18 model from torchvision and extract the feature extractor part
+    model_dict["resnet-18"] = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+    model_dict["resnet-18"] = torch.nn.Sequential(
+        *list(model_dict["resnet-18"].children())[:-2]
+    )
+
     # Freeze all model parameters (no backpropagation updates) and move to the device
     for model in model_dict.values():
         for param in model.parameters():
@@ -170,20 +176,21 @@ def style_transfer_from_content(
         device (torch.device): Device to perform computation on (CPU or GPU).
 
     Returns:
-        tuple: A list of images at checkpoints and a list of total losses.
+        tuple: A list of images and a list of total losses.
     """
     # Extract configuration from the `data` dictionary
     layers = data["layers"]
-    style_weights = data["style_weights"]
-    content_loss_layer = data["content_layer"]
+    content_loss_layer = data["content_layer"][
+        "vgg" if "vgg" in model_name else "resnet"
+    ]
     params = data["hyperparameters"]
+    style_weights = data["style_weights"]["vgg" if "vgg" in model_name else "resnet"]
 
     # Define hyperparameters
     alpha = params["alpha"]
     beta = params["beta"]
     lr = params["lr"]
     iterations = params["iters"]
-    checkpoints = params["ckpts"]
 
     # Extract features for the content and style images
     content_features = extract_features(
@@ -198,7 +205,7 @@ def style_transfer_from_content(
     # Define the optimizer (Adam is used for efficient optimization)
     optimizer = optim.Adam([target], lr=lr)
 
-    # Lists to store images at checkpoints and total loss values
+    # Lists to store images and total loss values
     images = [tensor_to_image(target.detach())]
     total_losses = []
 
@@ -228,8 +235,8 @@ def style_transfer_from_content(
         # Store total loss for tracking
         total_losses.append(total_loss.item())
 
-        # Save the target image at specified checkpoints
-        if step % (iterations // checkpoints) == 0:
+        # Save the target image
+        if step % (iterations // 10) == 0:
             images.append(tensor_to_image(target.detach()))
 
     # Log final step information
@@ -264,20 +271,21 @@ def style_transfer_from_noise(
         device (torch.device): Device to perform computation on (CPU or GPU).
 
     Returns:
-        tuple: A list of images at checkpoints and a list of total losses.
+        tuple: A list of images and a list of total losses.
     """
     # Extract configuration from the `data` dictionary
     layers = data["layers"]
-    style_weights = data["style_weights"]
-    content_loss_layer = data["content_layer"]
+    content_loss_layer = data["content_layer"][
+        "vgg" if "vgg" in model_name else "resnet"
+    ]
     params = data["hyperparameters"]
+    style_weights = data["style_weights"]["vgg" if "vgg" in model_name else "resnet"]
 
     # Define hyperparameters
     alpha = params["alpha"]
     beta = params["beta"]
     lr = params["lr"]
     iterations = params["iters"]
-    checkpoints = params["ckpts"]
 
     # Extract features for the content and style images
     content_features = extract_features(
@@ -292,7 +300,7 @@ def style_transfer_from_noise(
     # Define the optimizer
     optimizer = optim.LBFGS([target], lr=lr)
 
-    # Lists to store images at checkpoints and total loss values
+    # Lists to store images and total loss values
     images = [tensor_to_image(target.detach())]  # Initial random noise image
     total_losses = []
 
@@ -328,8 +336,8 @@ def style_transfer_from_noise(
     for step in tqdm(range(1, iterations + 1)):
         optimizer.step(closure)
 
-        # Save the target image at specified checkpoints
-        if step % (iterations // checkpoints) == 0:
+        # Save the target image
+        if step % (iterations // 10) == 0:
             images.append(tensor_to_image(target.detach()))
 
     # Log final step information
