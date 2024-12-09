@@ -1,0 +1,51 @@
+{
+    "layers": {
+        "vgg-16": {
+            "0": "conv1_1",
+            "5": "conv2_1",
+            "10": "conv3_1",
+            "17": "conv4_1",
+            "19": "conv4_2",
+            "24": "conv5_1"
+        },
+        "vgg-19": {
+            "0": "conv1_1",
+            "5": "conv2_1",
+            "10": "conv3_1",
+            "19": "conv4_1",
+            "21": "conv4_2",
+            "28": "conv5_1"
+        },
+        "resnet-18": {
+            "4": "layer1", 
+            "5": "layer2", 
+            "6": "layer3", 
+            "7": "layer4"
+        }
+    },
+    "style_weights": {
+        "vgg": {
+            "conv1_1": 1,
+            "conv2_1": 0.8,
+            "conv3_1": 0.5,
+            "conv4_1": 0.3,
+            "conv5_1": 0.2
+        },
+        "resnet": {
+            "layer1": 0.8,
+            "layer2": 0.5,
+            "layer3": 0.3,
+            "layer4": 0.2
+        }
+    },
+    "content_layer": {
+        "vgg": "conv4_2",
+        "resnet": "layer3"
+    },
+    "hyperparameters": {
+        "alpha": 1,
+        "beta": 1e6,
+        "lr": 0.1,
+        "iters": 250
+    }
+}
