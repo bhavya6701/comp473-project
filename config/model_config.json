@@ -44,8 +44,8 @@
     },
     "hyperparameters": {
         "alpha": 1,
-        "beta": 1e6,
+        "beta": 1e7,
         "lr": 0.1,
-        "iters": 250
+        "iters": 300
     }
 }
